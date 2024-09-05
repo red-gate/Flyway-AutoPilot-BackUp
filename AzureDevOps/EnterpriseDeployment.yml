@@ -212,11 +212,12 @@ stages:
 
     - job: CodeReview
       displayName: Code Review
-      condition: eq(variables['pauseForCodeReview'], true)
+      dependsOn: ChangeReport
       pool: server
       steps:
         - task: ManualValidation@0
           displayName: 'Review Change Report Prior To Release'
+          condition: eq(variables['pauseForCodeReview'], true)
           timeoutInMinutes: 4320 # job times out in 1 hour
           inputs:
             notifyUsers: |
