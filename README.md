@@ -1,7 +1,7 @@
-# AutoRodent
+# AutoPilot BackUp & Running
 
 ## Overview
-**AutoRodent** is a comprehensive solution designed to facilitate the creation of a complete Flyway project with full CI/CD capabilities. By providing a schema-only backup, users can automatically generate a Flyway project, making it easier to manage database migrations and integrations.
+**AutoPilot BackUp & Running** is a comprehensive solution designed to facilitate the creation of a complete Flyway project with full CI/CD capabilities. By providing a schema-only backup, users can automatically generate a Flyway project, making it easier to manage database migrations and integrations.
 
 ## Features
 - Automatically generate a Flyway project from a schema-only backup.
