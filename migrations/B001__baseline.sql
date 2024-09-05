@@ -6,7 +6,7 @@
 */
 
 -- flyway:executeInTransaction=false
-DECLARE @BackupFilePath NVARCHAR(128) = N'${flyway:workingDirectory}\backups\AutoBackup.bak';
+DECLARE @BackupFilePath NVARCHAR(128) = N'${flyway:workingDirectory}\backups\AutoBackup_Customer.bak';
 DECLARE @DatabaseName NVARCHAR(128) = N'${flyway:database}';
 DECLARE @LogicalDataFileName NVARCHAR(128) = 'AdventureWorks2016_Data';
 DECLARE @LogicalLogFileName NVARCHAR(128) = 'AdventureWorks2016_Log';
@@ -73,6 +73,7 @@ PRINT N'Creating [dbo].[flyway_schema_history]'
 GO
 USE ${flyway:database} 
 IF OBJECT_ID(N'[dbo].[flyway_schema_history]', 'U') IS NULL
+BEGIN
 CREATE TABLE [dbo].[flyway_schema_history](
 		[installed_rank] [INT] NOT NULL,
 		[version] [NVARCHAR](50) NULL,
@@ -90,6 +91,7 @@ CREATE TABLE [dbo].[flyway_schema_history](
 	)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
 	) ON [PRIMARY]
     ALTER TABLE [dbo].[flyway_schema_history] ADD DEFAULT (GETDATE()) FOR [installed_on]
+END
 GO
 IF @@ERROR <> 0 SET NOEXEC ON
 GO
