@@ -134,7 +134,7 @@ stages:
         - task: ManualValidation@0
           condition: eq(variables['pauseForCodeReview'], true)
           displayName: 'Review Change Report Prior To Release'
-          timeoutInMinutes: 4320 # job times out in 1 hour
+          timeoutInMinutes: 4320 
           inputs:
             notifyUsers: |
               user@email.com
@@ -218,7 +218,7 @@ stages:
         - task: ManualValidation@0
           displayName: 'Review Change Report Prior To Release'
           condition: eq(variables['pauseForCodeReview'], true)
-          timeoutInMinutes: 4320 # job times out in 1 hour
+          timeoutInMinutes: 4320
           inputs:
             notifyUsers: |
               user@email.com
