@@ -97,7 +97,6 @@ stages:
             PathtoPublish: '$(System.ArtifactsDirectory)'
 
   - stage: Test
-    pool: $(AGENT_POOL)
     displayName: Test Stage
     dependsOn: Build
     variables: # Tip - For sensitive variables, these can be made into a secret by clicking the Variables button in top right corner of the YAML pipeline editor.
@@ -198,7 +197,6 @@ stages:
           condition:
   
   - stage: Prod
-    pool: $(AGENT_POOL)
     displayName: Prod Stage
     dependsOn: Test
     variables: # Tip - For sensitive variables, these can be made into a secret by clicking the Variables button in top right corner of the YAML pipeline editor.
