@@ -153,7 +153,7 @@ jobs:
       - name: Create Check Reports
         if: env.generateDriftAndChangeReport == 'true'
         run: |
-          flyway check -dryrun -changes -drift -environment="${{ env.ENVIRONMENT }}" -user=${{ env.TARGET_DATABASE_USERNAME }} -password=${{ env.TARGET_DATABASE_PASSWORD }} -configFiles="${{ GITHUB.WORKSPACE }}\flyway.toml" -locations="filesystem:${{ GITHUB.WORKSPACE }}\migrations" "-check.failOnDrift=${{ env.failReleaseIfDriftDetected }}" "-check.buildEnvironment=${{ env.CHECK_ENVIRONMENT }}" "-environments.${{ env.CHECK_ENVIRONMENT }}.user=${{ env.CHECK_DATABASE_USERNAME }}" "-environments.${{ env.CHECK_ENVIRONMENT }}.password=${{ env.CHECK_DATABASE_PASSWORD }}" "-reportFilename=${{ GITHUB.WORKSPACE }}\reports\${{ env.databaseName }}-Run-${{ GITHUB.RUN_ID }}-${{ env.ENVIRONMENT }}-Check-Report.html" -licenseKey="${{ env.FLYWAY_LICENSE_KEY }}"
+          flyway check -dryrun -changes -drift -environment="${{ env.ENVIRONMENT }}" -user=${{ env.TARGET_DATABASE_USERNAME }} -password=${{ env.TARGET_DATABASE_PASSWORD }} -configFiles="${{ GITHUB.WORKSPACE }}\flyway.toml" -locations="filesystem:${{ GITHUB.WORKSPACE }}\migrations" "-check.failOnDrift=${{ env.failReleaseIfDriftDetected }}" "-check.buildEnvironment=${{ env.CHECK_ENVIRONMENT }}" "-environments.${{ env.CHECK_ENVIRONMENT }}.user=${{ env.CHECK_DATABASE_USERNAME }}" "-environments.${{ env.CHECK_ENVIRONMENT }}.password=${{ env.CHECK_DATABASE_PASSWORD }}" "-reportFilename=${{ GITHUB.WORKSPACE }}\reports\${{ env.DATABASE_NAME }}-Run-${{ GITHUB.RUN_ID }}-${{ env.ENVIRONMENT }}-Check-Report.html" -licenseKey="${{ env.FLYWAY_LICENSE_KEY }}"
         continue-on-error: true
 
       - name: Publish Check Report as Artifact
@@ -220,7 +220,7 @@ jobs:
       - name: Create Check Reports
         if: env.generateDriftAndChangeReport == 'true'
         run: |
-          flyway check -dryrun -changes -drift -environment="${{ env.ENVIRONMENT }}" -user=${{ env.TARGET_DATABASE_USERNAME }} -password=${{ env.TARGET_DATABASE_PASSWORD }} -configFiles="${{ GITHUB.WORKSPACE }}\flyway.toml" -locations="filesystem:${{ GITHUB.WORKSPACE }}\migrations" "-check.failOnDrift=${{ env.failReleaseIfDriftDetected }}" "-check.buildEnvironment=${{ env.CHECK_ENVIRONMENT }}" "-environments.${{ env.CHECK_ENVIRONMENT }}.user=${{ env.CHECK_DATABASE_USERNAME }}" "-environments.${{ env.CHECK_ENVIRONMENT }}.password=${{ env.CHECK_DATABASE_PASSWORD }}" "-reportFilename=${{ GITHUB.WORKSPACE }}\reports\${{ env.databaseName }}-Run-${{ GITHUB.RUN_ID }}-${{ env.ENVIRONMENT }}-Check-Report.html" -licenseKey="${{ env.FLYWAY_LICENSE_KEY }}"
+          flyway check -dryrun -changes -drift -environment="${{ env.ENVIRONMENT }}" -user=${{ env.TARGET_DATABASE_USERNAME }} -password=${{ env.TARGET_DATABASE_PASSWORD }} -configFiles="${{ GITHUB.WORKSPACE }}\flyway.toml" -locations="filesystem:${{ GITHUB.WORKSPACE }}\migrations" "-check.failOnDrift=${{ env.failReleaseIfDriftDetected }}" "-check.buildEnvironment=${{ env.CHECK_ENVIRONMENT }}" "-environments.${{ env.CHECK_ENVIRONMENT }}.user=${{ env.CHECK_DATABASE_USERNAME }}" "-environments.${{ env.CHECK_ENVIRONMENT }}.password=${{ env.CHECK_DATABASE_PASSWORD }}" "-reportFilename=${{ GITHUB.WORKSPACE }}\reports\${{ env.DATABASE_NAME }}-Run-${{ GITHUB.RUN_ID }}-${{ env.ENVIRONMENT }}-Check-Report.html" -licenseKey="${{ env.FLYWAY_LICENSE_KEY }}"
         continue-on-error: true
 
       - name: Publish Check Report as Artifact
