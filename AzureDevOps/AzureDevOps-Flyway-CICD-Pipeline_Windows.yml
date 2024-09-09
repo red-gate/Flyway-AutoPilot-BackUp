@@ -1,4 +1,4 @@
-name: Flyway-AutoPilot-Simple-Pipeline-Windows
+ame: Flyway-AutoPilot-Simple-Pipeline-Windows
 
 # trigger: #Uncomment lines 3-9 to enable an automatic pipeline trigger for any new migration scripts found in your preferred branch
 #   branches:
@@ -7,6 +7,10 @@ name: Flyway-AutoPilot-Simple-Pipeline-Windows
 #   paths:
 #     include:
 #       - migrations/*
+
+pool:
+  name: "" # To be set when a self-hosted agent pool is to be used alongside this pipeline
+  #vmImage: "windows-latest" # To be used when a microsoft-hosted agent is used alongside this pipeline (Such as ubuntu-latest/windows-latest)
 
 variables:
 
@@ -22,11 +26,13 @@ variables:
   FLYWAY_LICENSE_KEY: "" # 
   BASELINE_VERSION: "001" # This should match the version number of your baseline script
   FIRST_UNDO_SCRIPT: "002" # This should match the first undo version in your project
-  AGENT_POOL: "Default" # This should reference the agent pool your pipeline will use - default to default
+
+  # Optional - For Microsoft Hosted Agents, it's necessary to ensure Flyway is installed on each run. Therefore, the below variables are required
+  MICROSOFT_HOSTED_AGENT: "true" # Setting to false will skip the Flyway CLI check step
+  FLYWAY_VERSION: "10.17.3" # This outlines the version of Flyway CLI that will be downloaded if no Flyway CLI is detected on the target agent
 
 stages:
   - stage: Build # Tip - The build stage is a great way of gaining quick early feedback about upcoming releases. It simply needs to point to an empty database to function.
-    pool: $(AGENT_POOL)
     displayName: Build Stage 
     jobs:
     - job: Build
@@ -39,7 +45,32 @@ stages:
       #- group: redgate_build_vars # Sensitive variables can also be setup in a stage level Variable Group, once set they can be linked by pointing to the group as follows.
 
       steps:
-        
+         # Pre-Req - Check if Flyway CLI Installed and Available on Agent
+        - task: PowerShell@2
+          displayName: 'Flyway CLI - Install Check'
+          condition: eq(variables['MICROSOFT_HOSTED_AGENT'], true)
+          inputs:
+            targetType: 'inline'
+            script: |
+               try {
+                    flyway --help
+                    Write-Host "Flyway CLI Detected - Continuing Without Install"
+                  }
+                  catch {
+                    Write-Host "Flyway Not Detected - Installing CLI"
+                    
+                    # Validate that the script file exists before running it
+                    $scriptPath = "$(WORKING_DIRECTORY)/scripts/Flyway_DownloadAndInstallCLI.ps1"
+                    if (Test-Path $scriptPath) {
+                      Write-Host "Script found. Running Flyway_DownloadAndInstallCLI.ps1..."
+                      & $scriptPath
+                      Write-Host "Updating PATH environment variable to include Flyway CLI Path"
+                        Write-Host "##vso[task.prependpath]C:\FlywayCLI\flyway-$(FLYWAY_VERSION)"
+                    } else {
+                      Write-Host "Error: Script not found at path $scriptPath"
+                      exit 1
+                    }
+                  }
         # Step 1 - Ensure the Build Database is cleaned of all objects, meaning the build starts from scratch
         - script: |
             flyway info clean info -environment="$(TARGET_ENVIRONMENT)" -user="$(TARGET_DATABASE_USERNAME)" -password="$(TARGET_DATABASE_PASSWORD)" "-plugins.clean.mode=all" -errorOverrides=S0001:0:I- -licenseKey="$(FLYWAY_LICENSE_KEY)" -configFiles="$(WORKING_DIRECTORY)/flyway.toml" -locations="filesystem:$(WORKING_DIRECTORY)/migrations"
@@ -86,7 +117,6 @@ stages:
             PathtoPublish: '$(System.ArtifactsDirectory)'
 
   - stage: Test
-    pool: $(AGENT_POOL)
     displayName: Test Stage
     dependsOn: Build
     variables: # Tip - For sensitive variables, these can be made into a secret by clicking the Variables button in top right corner of the YAML pipeline editor.
@@ -109,6 +139,31 @@ stages:
       #- group: ${{stage.variableGroupName}}
       #- group: pipeline_flyway_vars
       steps:
+                 # Pre-Req - Check if Flyway CLI Installed and Available on Agent
+        - task: PowerShell@2
+          displayName: 'Flyway CLI - Install Check'
+          inputs:
+            targetType: 'inline'
+            script: |
+               try {
+                    flyway --help
+                    Write-Host "Flyway CLI Detected - Continuing Without Install"
+                  }
+                  catch {
+                    Write-Host "Flyway Not Detected - Installing CLI"
+                    
+                    # Validate that the script file exists before running it
+                    $scriptPath = "$(WORKING_DIRECTORY)/scripts/Flyway_DownloadAndInstallCLI.ps1"
+                    if (Test-Path $scriptPath) {
+                      Write-Host "Script found. Running Flyway_DownloadAndInstallCLI.ps1..."
+                      & $scriptPath
+                      Write-Host "Updating PATH environment variable to include Flyway CLI Path"
+                        Write-Host "##vso[task.prependpath]C:\FlywayCLI\flyway-$(FLYWAY_VERSION)"
+                    } else {
+                      Write-Host "Error: Script not found at path $scriptPath"
+                      exit 1
+                    }
+                  }
         - task: DownloadBuildArtifacts@0
           inputs:
             buildType: 'current'
@@ -155,6 +210,31 @@ stages:
       variables:
         EXAMPLE: ""
       steps:
+                 # Pre-Req - Check if Flyway CLI Installed and Available on Agent
+        - task: PowerShell@2
+          displayName: 'Flyway CLI - Install Check'
+          inputs:
+            targetType: 'inline'
+            script: |
+               try {
+                    flyway --help
+                    Write-Host "Flyway CLI Detected - Continuing Without Install"
+                  }
+                  catch {
+                    Write-Host "Flyway Not Detected - Installing CLI"
+                    
+                    # Validate that the script file exists before running it
+                    $scriptPath = "$(WORKING_DIRECTORY)/scripts/Flyway_DownloadAndInstallCLI.ps1"
+                    if (Test-Path $scriptPath) {
+                      Write-Host "Script found. Running Flyway_DownloadAndInstallCLI.ps1..."
+                      & $scriptPath
+                      Write-Host "Updating PATH environment variable to include Flyway CLI Path"
+                        Write-Host "##vso[task.prependpath]C:\FlywayCLI\flyway-$(FLYWAY_VERSION)"
+                    } else {
+                      Write-Host "Error: Script not found at path $scriptPath"
+                      exit 1
+                    }
+                  }
         - task: DownloadBuildArtifacts@0
           inputs:
             buildType: 'current'
@@ -169,7 +249,6 @@ stages:
           condition:
   
   - stage: Prod
-    pool: $(AGENT_POOL)
     displayName: Prod Stage
     dependsOn: Test
     variables: # Tip - For sensitive variables, these can be made into a secret by clicking the Variables button in top right corner of the YAML pipeline editor.
@@ -193,6 +272,31 @@ stages:
       #- group: ${{stage.variableGroupName}}
       #- group: pipeline_flyway_vars
       steps:
+                 # Pre-Req - Check if Flyway CLI Installed and Available on Agent
+        - task: PowerShell@2
+          displayName: 'Flyway CLI - Install Check'
+          inputs:
+            targetType: 'inline'
+            script: |
+               try {
+                    flyway --help
+                    Write-Host "Flyway CLI Detected - Continuing Without Install"
+                  }
+                  catch {
+                    Write-Host "Flyway Not Detected - Installing CLI"
+
+                    # Validate that the script file exists before running it
+                    $scriptPath = "$(WORKING_DIRECTORY)/scripts/Flyway_DownloadAndInstallCLI.ps1"
+                    if (Test-Path $scriptPath) {
+                      Write-Host "Script found. Running Flyway_DownloadAndInstallCLI.ps1..."
+                      & $scriptPath
+                      Write-Host "Updating PATH environment variable to include Flyway CLI Path"
+                        Write-Host "##vso[task.prependpath]C:\FlywayCLI\flyway-$(FLYWAY_VERSION)"
+                    } else {
+                      Write-Host "Error: Script not found at path $scriptPath"
+                      exit 1
+                    }
+                  }
         - task: DownloadBuildArtifacts@0
           inputs:
             buildType: 'current'
@@ -239,6 +343,31 @@ stages:
       variables:
         EXAMPLE: ""
       steps:
+                 # Pre-Req - Check if Flyway CLI Installed and Available on Agent
+        - task: PowerShell@2
+          displayName: 'Flyway CLI - Install Check'
+          inputs:
+            targetType: 'inline'
+            script: |
+               try {
+                    flyway --help
+                    Write-Host "Flyway CLI Detected - Continuing Without Install"
+                  }
+                  catch {
+                    Write-Host "Flyway Not Detected - Installing CLI"
+                    
+                    # Validate that the script file exists before running it
+                    $scriptPath = "$(WORKING_DIRECTORY)/scripts/Flyway_DownloadAndInstallCLI.ps1"
+                    if (Test-Path $scriptPath) {
+                      Write-Host "Script found. Running Flyway_DownloadAndInstallCLI.ps1..."
+                      & $scriptPath
+                      Write-Host "Updating PATH environment variable to include Flyway CLI Path"
+                        Write-Host "##vso[task.prependpath]C:\FlywayCLI\flyway-$(FLYWAY_VERSION)"
+                    } else {
+                      Write-Host "Error: Script not found at path $scriptPath"
+                      exit 1
+                    }
+                  }
         - task: DownloadBuildArtifacts@0
           inputs:
             buildType: 'current'
