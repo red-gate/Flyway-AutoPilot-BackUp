@@ -1,6 +1,6 @@
 # This is a basic workflow to help you get started with Actions
  
-name: Enterprise-Workflow
+name: GitHub-Flyway-AutoPilot-Pipeline-Windows
 
 on:
   # Triggers the workflow on push or pull request events but only for the "release" branch
@@ -13,12 +13,16 @@ on:
   workflow_dispatch:
 env:
  
-  FLYWAY_LICENSE_KEY: ${{ secrets.FLYWAY_LICENSE_KEY }} #Repository Secret - Create this within the Projects Settings > Secrects > Actions section
+  FLYWAY_LICENSE_KEY: "" #Repository Secret - Create this within the Projects Settings > Secrects > Actions section
   # If the first undo script is U002, this will validate all undo scripts up to and including that
+  BASELINE_VERSION: "001" # This should match the version number of your baseline script
   FIRST_UNDO_SCRIPT: "002"
   # Enable this for additional debug logging
   ACTIONS_RUNNER_DEBUG: false
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE20: true # For security purposes, this is set to true to enable latest Node20 version
+
+  # Optional - For Microsoft Hosted Agents, it's necessary to ensure Flyway is installed on each run. Therefore, the below variables are required
+  GITHUB_HOSTED_RUNNER: "false" # Setting to false will skip the Flyway CLI check step
+  FLYWAY_VERSION: "10.17.3" # This outlines the version of Flyway CLI that will be downloaded if no Flyway CLI is detected on the target agent
  
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -26,7 +30,7 @@ jobs:
   build:
     name: Deploy Build
     # The type of runner that the job will run on
-    runs-on: self-hosted
+    runs-on: "self-hosted" # Options - self-hosted/ubuntu-latest/windows-latest (See here for more details on GitHub hosted runners - https://docs.github.com/en/actions/using-github-hosted-runners/using-github-hosted-runners/about-github-hosted-runners)
     environment: 'build' #Ensure this environment name is setup in the projects Settings>Environment area. Ensuring any reviewers are also configFilesured 
     env:
       stage: 'Build'
@@ -34,8 +38,8 @@ jobs:
       # Environment Secrets - In a Production setup, Ensure all of the below have been created as an Environment Secret (Projects Settings > Secrets > Actions section, specially related to the environment in question) #
       DATABASE_NAME: "AutoPilotBuild"
       ENVIRONMENT: "Build" # This variable refers to the environment name present in the Flyway Projects TOML file. Use Flyway Desktop to check and change this value if required.
-      TARGET_DATABASE_USERNAME : "user" # If using SQL Authentication, make sure to populate these fields!
-      TARGET_DATABASE_PASSWORD : "pass" # If using SQL Authentication, make sure to populate these fields!
+      TARGET_DATABASE_USERNAME : "MyUsername" # If using SQL Authentication, make sure to populate these fields!
+      TARGET_DATABASE_PASSWORD : "MyPassword" # If using SQL Authentication, make sure to populate these fields!
 
       displayName: 'Build'
       executeBuild: true
@@ -44,7 +48,22 @@ jobs:
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+
+      - name: Flyway - CLI Install ManualValidation
+        if: env.GITHUB_HOSTED_RUNNER == 'true'
+        run: |
+          $scriptPath = "${{ GITHUB.WORKSPACE }}/scripts/Flyway_DownloadAndInstallCLI.ps1"
+          if (Test-Path $scriptPath) {
+            Write-Host "Script found. Running Flyway_DownloadAndInstallCLI.ps1..."
+            & $scriptPath
+            Write-Host "Updating PATH environment variable to include Flyway CLI Path"
+              echo "C:\FlywayCLI\flyway-${{ env.FLYWAY_VERSION }}" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          } 
+          else {
+            Write-Host "Error: Script not found at path $scriptPath"
+            exit 1
+          }
       
       # Runs the Flyway Clean command against the Build database
       - name: Clean Build DB
@@ -64,25 +83,28 @@ jobs:
         run: |
           flyway info undo info -environment="${{ env.ENVIRONMENT }}" -user=${{ env.TARGET_DATABASE_USERNAME }} -password=${{ env.TARGET_DATABASE_PASSWORD }} -licenseKey="${{ env.FLYWAY_LICENSE_KEY }}" -configFiles="${{ GITHUB.WORKSPACE }}\flyway.toml" -locations="filesystem:${{ GITHUB.WORKSPACE }}\migrations" -baselineOnMigrate="true" -cleanDisabled='false' -target="${{ env.FIRST_UNDO_SCRIPT }}"
  
-       # Create a directory to stage the artifact files
-      - name: Stage files for publishing
-        if: env.publishArtifacts == 'true'
-        run: |
-          cp -R ${{ GITHUB.WORKSPACE }}/migrations Artifact_Files/Migration/
- 
       
       #After migration scripts are validated, publish them as an artifact
       - name: Publish Validated Migration Scripts as Artifact
         if: env.publishArtifacts == 'true'
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with: 
-          name: flyway-build-artifact
-          path: Artifact_Files/Migration/
+          name: flyway-build-artifact-${{ github.run_number }}
+          path: |
+              !${{ GITHUB.WORKSPACE }}\flyway-*\**\*
+              !${{ GITHUB.WORKSPACE }}\.git\**\*
+              !${{ GITHUB.WORKSPACE }}\.git*\**\*
+              ${{ GITHUB.WORKSPACE }}\**\schema-model\**\*
+              ${{ GITHUB.WORKSPACE }}\**\migrations\**\*
+              ${{ GITHUB.WORKSPACE }}\**\Scripts\**\*
+              ${{ GITHUB.WORKSPACE }}\**\backups\**\*
+              ${{ GITHUB.WORKSPACE }}\**\flyway.toml
+              ${{ GITHUB.WORKSPACE }}\**\Filter.scpf
 
   test:
     name: Deploy Test
     # The type of runner that the job will run on
-    runs-on: self-hosted
+    runs-on: "self-hosted" # Options - self-hosted/ubuntu-latest/windows-latest (See here for more details on GitHub hosted runners - https://docs.github.com/en/actions/using-github-hosted-runners/using-github-hosted-runners/about-github-hosted-runners)
     environment: 'test' #Ensure this environment name is setup in the projects Settings>Environment area. Ensuring any reviewers are also configFilesured 
     if: ${{ true }} #Set this variable to false to temporarily disable the job
     needs: build
@@ -92,28 +114,46 @@ jobs:
       DATABASE_NAME: "AutoPilotTest"
 
       ENVIRONMENT: "Test" # This variable refers to the environment name present in the Flyway Projects TOML file. Use Flyway Desktop to check and change this value if required.
-      TARGET_DATABASE_USERNAME : "user" # If using SQL Authentication, make sure to populate these fields!
-      TARGET_DATABASE_PASSWORD : "pass" # If using SQL Authentication, make sure to populate these fields!
+      TARGET_DATABASE_USERNAME : "MyUsername" # If using SQL Authentication, make sure to populate these fields!
+      TARGET_DATABASE_PASSWORD : "MyPassword" # If using SQL Authentication, make sure to populate these fields!
 
       CHECK_ENVIRONMENT: "Check" # This variable refers to the environment name present in the Flyway Projects TOML file. Use Flyway Desktop to check and change this value if required.
-      CHECK_DATABASE_USERNAME : "user" # If using SQL Authentication, make sure to populate these fields!
-      CHECK_DATABASE_PASSWORD : "pass" # If using SQL Authentication, make sure to populate these fields!
+      CHECK_DATABASE_USERNAME : "MyUsername" # If using SQL Authentication, make sure to populate these fields!
+      CHECK_DATABASE_PASSWORD : "MyPassword" # If using SQL Authentication, make sure to populate these fields!
       # End of Environment Secrets #
       generateDriftAndChangeReport: true
       failReleaseIfDriftDetected: false
-      staticCodeAnalysis: false #Currently not setup in this pipeline
       publishArtifacts: true
  
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v3
+      - uses: actions/download-artifact@v4
+        with:
+          name: flyway-build-artifact-${{ github.run_number }}
+      - name: Display structure of downloaded files
+        run: ls -R
+
+      - name: Flyway - CLI Install ManualValidation
+        if: env.GITHUB_HOSTED_RUNNER == 'true'
+        run: |
+          $scriptPath = "${{ GITHUB.WORKSPACE }}/scripts/Flyway_DownloadAndInstallCLI.ps1"
+          if (Test-Path $scriptPath) {
+            Write-Host "Script found. Running Flyway_DownloadAndInstallCLI.ps1..."
+            & $scriptPath
+            Write-Host "Updating PATH environment variable to include Flyway CLI Path"
+              echo "C:\FlywayCLI\flyway-${{ env.FLYWAY_VERSION }}" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          } 
+          else {
+            Write-Host "Error: Script not found at path $scriptPath"
+            exit 1
+          }
 
        # Runs the Flyway Check command, to produce a deployment report, against the Production database
       - name: Create Check Reports
         if: env.generateDriftAndChangeReport == 'true'
         run: |
-          flyway check -dryrun -changes -drift -environment="${{ env.ENVIRONMENT }}" -user=${{ env.TARGET_DATABASE_USERNAME }} -password=${{ env.TARGET_DATABASE_PASSWORD }} -configFiles="${{ GITHUB.WORKSPACE }}\flyway.toml" -locations="filesystem:${{ GITHUB.WORKSPACE }}\migrations" "-check.failOnDrift=${{ env.failReleaseIfDriftDetected }}" "-check.buildEnvironment=${{ env.CHECK_ENVIRONMENT }}" "-check.buildUser=${{ env.CHECK_USERNAME }}" "-check.buildPassword=${{ env.CHECK_PASSWORD }}" "-reportFilename=${{ GITHUB.WORKSPACE }}\reports\${{ env.databaseName }}-Run-${{ GITHUB.RUN_ID }}-${{ env.ENVIRONMENT }}-Check-Report.html" -licenseKey="${{ env.FLYWAY_LICENSE_KEY }}"
+          flyway check -dryrun -changes -drift -environment="${{ env.ENVIRONMENT }}" -user=${{ env.TARGET_DATABASE_USERNAME }} -password=${{ env.TARGET_DATABASE_PASSWORD }} -configFiles="${{ GITHUB.WORKSPACE }}\flyway.toml" -locations="filesystem:${{ GITHUB.WORKSPACE }}\migrations" "-check.failOnDrift=${{ env.failReleaseIfDriftDetected }}" "-check.buildEnvironment=${{ env.CHECK_ENVIRONMENT }}" "-environments.${{ env.CHECK_ENVIRONMENT }}.user=${{ env.CHECK_DATABASE_USERNAME }}" "-environments.${{ env.CHECK_ENVIRONMENT }}.password=${{ env.CHECK_DATABASE_PASSWORD }}" "-reportFilename=${{ GITHUB.WORKSPACE }}\reports\${{ env.databaseName }}-Run-${{ GITHUB.RUN_ID }}-${{ env.ENVIRONMENT }}-Check-Report.html" -licenseKey="${{ env.FLYWAY_LICENSE_KEY }}"
         continue-on-error: true
 
         # Create a directory to stage the artifact files
@@ -123,9 +163,9 @@ jobs:
           cp -R ${{ GITHUB.WORKSPACE }}\reports Artifact_Files/Reports/
 
       - name: Publish Check Report as Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with: 
-          name: flyway-reports
+          name: flyway-reports-test
           path: Artifact_Files/Reports/
         
       # Runs the Flyway Migrate against the Production database
@@ -137,7 +177,7 @@ jobs:
   prod:
     name: Deploy Prod
     # The type of runner that the job will run on
-    runs-on: self-hosted
+    runs-on: "self-hosted" # Options - self-hosted/ubuntu-latest/windows-latest (See here for more details on GitHub hosted runners - https://docs.github.com/en/actions/using-github-hosted-runners/using-github-hosted-runners/about-github-hosted-runners)
     environment: 'prod' #Ensure this environment name is setup in the projects Settings>Environment area. Ensuring any reviewers are also configFilesured 
     if: ${{ true }} #Set this variable to false to temporarily disable the job
     needs: test
@@ -147,28 +187,46 @@ jobs:
       DATABASE_NAME: "AutoPilotProd"
 
       ENVIRONMENT: "Prod"  # This variable refers to the environment name present in the Flyway Projects TOML file. Use Flyway Desktop to check and change this value if required.
-      TARGET_DATABASE_USERNAME : "user" # If using SQL Authentication, make sure to populate these fields!
-      TARGET_DATABASE_PASSWORD : "pass" # If using SQL Authentication, make sure to populate these fields!
+      TARGET_DATABASE_USERNAME : "MyUsername" # If using SQL Authentication, make sure to populate these fields!
+      TARGET_DATABASE_PASSWORD : "MyPassword" # If using SQL Authentication, make sure to populate these fields!
 
       CHECK_ENVIRONMENT: "Check" # This variable refers to the environment name present in the Flyway Projects TOML file. Use Flyway Desktop to check and change this value if required.
-      CHECK_DATABASE_USERNAME : "user" # If using SQL Authentication, make sure to populate these fields!
-      CHECK_DATABASE_PASSWORD : "pass" # If using SQL Authentication, make sure to populate these fields!
+      CHECK_DATABASE_USERNAME : "MyUsername" # If using SQL Authentication, make sure to populate these fields!
+      CHECK_DATABASE_PASSWORD : "MyPassword" # If using SQL Authentication, make sure to populate these fields!
       # End of Environment Secrets #
       generateDriftAndChangeReport: true
       failReleaseIfDriftDetected: false
-      staticCodeAnalysis: false #Currently not setup in this pipeline
       publishArtifacts: true
  
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v3
+      - uses: actions/download-artifact@v4
+        with:
+          name: flyway-build-artifact-${{ github.run_number }}
+      - name: Display structure of downloaded files
+        run: ls -R
+
+      - name: Flyway - CLI Install ManualValidation
+        if: env.GITHUB_HOSTED_RUNNER == 'true'
+        run: |
+          $scriptPath = "${{ GITHUB.WORKSPACE }}/scripts/Flyway_DownloadAndInstallCLI.ps1"
+          if (Test-Path $scriptPath) {
+            Write-Host "Script found. Running Flyway_DownloadAndInstallCLI.ps1..."
+            & $scriptPath
+            Write-Host "Updating PATH environment variable to include Flyway CLI Path"
+              echo "C:\FlywayCLI\flyway-${{ env.FLYWAY_VERSION }}" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          } 
+          else {
+            Write-Host "Error: Script not found at path $scriptPath"
+            exit 1
+          }
 
        # Runs the Flyway Check command, to produce a deployment report, against the Production database
       - name: Create Check Reports
         if: env.generateDriftAndChangeReport == 'true'
         run: |
-          flyway check -dryrun -changes -drift -environment="${{ env.ENVIRONMENT }}" -user=${{ env.TARGET_DATABASE_USERNAME }} -password=${{ env.TARGET_DATABASE_PASSWORD }} -configFiles="${{ GITHUB.WORKSPACE }}\flyway.toml" -locations="filesystem:${{ GITHUB.WORKSPACE }}\migrations" "-check.failOnDrift=${{ env.failReleaseIfDriftDetected }}" "-check.buildEnvironment=${{ env.CHECK_ENVIRONMENT }}" "-check.buildUser=${{ env.CHECK_USERNAME }}" "-check.buildPassword=${{ env.CHECK_PASSWORD }}" "-reportFilename=${{ GITHUB.WORKSPACE }}\reports\${{ env.databaseName }}-Run-${{ GITHUB.RUN_ID }}-${{ env.ENVIRONMENT }}-Check-Report.html" -licenseKey="${{ env.FLYWAY_LICENSE_KEY }}"
+          flyway check -dryrun -changes -drift -environment="${{ env.ENVIRONMENT }}" -user=${{ env.TARGET_DATABASE_USERNAME }} -password=${{ env.TARGET_DATABASE_PASSWORD }} -configFiles="${{ GITHUB.WORKSPACE }}\flyway.toml" -locations="filesystem:${{ GITHUB.WORKSPACE }}\migrations" "-check.failOnDrift=${{ env.failReleaseIfDriftDetected }}" "-check.buildEnvironment=${{ env.CHECK_ENVIRONMENT }}" "-environments.${{ env.CHECK_ENVIRONMENT }}.user=${{ env.CHECK_DATABASE_USERNAME }}" "-environments.${{ env.CHECK_ENVIRONMENT }}.password=${{ env.CHECK_DATABASE_PASSWORD }}" "-reportFilename=${{ GITHUB.WORKSPACE }}\reports\${{ env.databaseName }}-Run-${{ GITHUB.RUN_ID }}-${{ env.ENVIRONMENT }}-Check-Report.html" -licenseKey="${{ env.FLYWAY_LICENSE_KEY }}"
         continue-on-error: true
 
         # Create a directory to stage the artifact files
@@ -178,9 +236,9 @@ jobs:
           cp -R ${{ GITHUB.WORKSPACE }}\reports Artifact_Files/Reports/
 
       - name: Publish Check Report as Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with: 
-          name: flyway-reports
+          name: flyway-reports-prod
           path: Artifact_Files/Reports/
         
       # Runs the Flyway Migrate against the Production database
