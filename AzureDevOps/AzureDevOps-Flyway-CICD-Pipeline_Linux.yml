@@ -26,6 +26,9 @@ variables:
   FLYWAY_LICENSE_KEY: "" # 
   BASELINE_VERSION: "001" # This should match the version number of your baseline script
   FIRST_UNDO_SCRIPT: "002" # This should match the first undo version in your project
+  
+  # Optional - For Microsoft Hosted Agents, it's necessary to ensure Flyway is installed on each run. Therefore, the below variables are required
+  MICROSOFT_HOSTED_AGENT: "false" # Setting to false will skip the Flyway CLI check step
   FLYWAY_VERSION: "10.17.3" # This outlines the version of Flyway CLI that will be downloaded if no Flyway CLI is detected on the target agent
 
 stages:
@@ -51,6 +54,7 @@ stages:
               wget -qO- https://download.red-gate.com/maven/release/com/redgate/flyway/flyway-commandline/$(FLYWAY_VERSION)/flyway-commandline-$(FLYWAY_VERSION)-linux-x64.tar.gz | tar -xvz && sudo ln -s `pwd`/flyway-$(FLYWAY_VERSION)/flyway /usr/local/bin 
             fi
           displayName: 'Flyway CLI - Install Check'
+          condition: eq(variables['MICROSOFT_HOSTED_AGENT'], true)
         # Step 1 - Ensure the Build Database is cleaned of all objects, meaning the build starts from scratch
         - script: |
             flyway info clean info -environment="$(TARGET_ENVIRONMENT)" -user="$(TARGET_DATABASE_USERNAME)" -password="$(TARGET_DATABASE_PASSWORD)" "-plugins.clean.mode=all" -errorOverrides=S0001:0:I- -licenseKey="$(FLYWAY_LICENSE_KEY)" -configFiles="$(WORKING_DIRECTORY)/flyway.toml" -locations="filesystem:$(WORKING_DIRECTORY)/migrations"
@@ -128,6 +132,7 @@ stages:
               wget -qO- https://download.red-gate.com/maven/release/com/redgate/flyway/flyway-commandline/$(FLYWAY_VERSION)/flyway-commandline-$(FLYWAY_VERSION)-linux-x64.tar.gz | tar -xvz && sudo ln -s `pwd`/flyway-$(FLYWAY_VERSION)/flyway /usr/local/bin 
             fi
           displayName: 'Flyway CLI - Install Check'
+          condition: eq(variables['MICROSOFT_HOSTED_AGENT'], true)
         - task: DownloadBuildArtifacts@0
           inputs:
             buildType: 'current'
@@ -183,6 +188,7 @@ stages:
               wget -qO- https://download.red-gate.com/maven/release/com/redgate/flyway/flyway-commandline/$(FLYWAY_VERSION)/flyway-commandline-$(FLYWAY_VERSION)-linux-x64.tar.gz | tar -xvz && sudo ln -s `pwd`/flyway-$(FLYWAY_VERSION)/flyway /usr/local/bin 
             fi
           displayName: 'Flyway CLI - Install Check'
+          condition: eq(variables['MICROSOFT_HOSTED_AGENT'], true)
         - task: DownloadBuildArtifacts@0
           inputs:
             buildType: 'current'
@@ -229,6 +235,7 @@ stages:
               wget -qO- https://download.red-gate.com/maven/release/com/redgate/flyway/flyway-commandline/$(FLYWAY_VERSION)/flyway-commandline-$(FLYWAY_VERSION)-linux-x64.tar.gz | tar -xvz && sudo ln -s `pwd`/flyway-$(FLYWAY_VERSION)/flyway /usr/local/bin 
             fi
           displayName: 'Flyway CLI - Install Check'
+          condition: eq(variables['MICROSOFT_HOSTED_AGENT'], true)
         - task: DownloadBuildArtifacts@0
           inputs:
             buildType: 'current'
@@ -284,6 +291,7 @@ stages:
               wget -qO- https://download.red-gate.com/maven/release/com/redgate/flyway/flyway-commandline/$(FLYWAY_VERSION)/flyway-commandline-$(FLYWAY_VERSION)-linux-x64.tar.gz | tar -xvz && sudo ln -s `pwd`/flyway-$(FLYWAY_VERSION)/flyway /usr/local/bin 
             fi
           displayName: 'Flyway CLI - Install Check'
+          condition: eq(variables['MICROSOFT_HOSTED_AGENT'], true)
         - task: DownloadBuildArtifacts@0
           inputs:
             buildType: 'current'
