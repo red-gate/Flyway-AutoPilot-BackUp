@@ -1,6 +1,6 @@
 name: Flyway-AutoPilot-Simple-Pipeline-Linux
 
-# trigger: #Uncomment lines 3-9 to enable an automatic pipeline trigger for any new migration scripts found in your preferred branch
+trigger: none
 #   branches:
 #     include:
 #       - release
@@ -9,7 +9,7 @@ name: Flyway-AutoPilot-Simple-Pipeline-Linux
 #       - migrations/*
 
 pool:
-  name: "" # To be set when a self-hosted agent pool is to be used alongside this pipeline
+  name: "default" # To be set when a self-hosted agent pool is to be used alongside this pipeline
   # vmImage: "" # To be used when a microsoft-hosted agent is used alongside this pipeline (Such as ubuntu-latest)
 
 variables:
