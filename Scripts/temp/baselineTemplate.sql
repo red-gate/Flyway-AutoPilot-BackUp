@@ -9,7 +9,7 @@
 DECLARE @BackupFilePath NVARCHAR(128) = N'${flyway:workingDirectory}\backups\TEMPORARYBACKUP';
 DECLARE @DatabaseName NVARCHAR(128) = N'${flyway:database}';
 DECLARE @LogicalDataFileName NVARCHAR(128) = 'TEMPORARYDATAFILENAME';
-DECLARE @AdventureWorks2016_Log NVARCHAR(128) = 'TEMPORARYLOGFILENAME';
+DECLARE @@LogicalLogFileNam NVARCHAR(128) = 'TEMPORARYLOGFILENAME';
 
 -- Attempts to Auto Find the Paths to the logical files!
 DECLARE @mdfLocation NVARCHAR(256) = CAST(SERVERPROPERTY('InstanceDefaultDataPath') AS NVARCHAR(200));  -- Get the default data file path
