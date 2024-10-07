@@ -53,7 +53,7 @@ stages:
         # Pre-Req - Check if Flyway CLI Installed and Available on Agent
         - script: |
             if flyway --help ; then
-              ech "Flyway Installed and Available"
+              echo "Flyway Installed and Available"
             else 
               echo "Flyway Not Installed - Downloading and Configuring Now"
               wget -qO- https://download.red-gate.com/maven/release/com/redgate/flyway/flyway-commandline/$(FLYWAY_VERSION)/flyway-commandline-$(FLYWAY_VERSION)-linux-x64.tar.gz | tar -xvz && sudo ln -s `pwd`/flyway-$(FLYWAY_VERSION)/flyway /usr/local/bin 
