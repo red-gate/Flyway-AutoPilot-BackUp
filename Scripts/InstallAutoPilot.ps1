@@ -202,7 +202,7 @@ Write-Host "Succesfully Created AutoPilot Testing Databases from: $sourceDB"
 Get-ChildItem -Filter B001* -Path $projectDir\migrations -Recurse | Move-Item -Destination $projectDir\scripts\temp\
 
 $baselineFilePath = "$projectDir\scripts\temp\baselineTemplate.sql"
-$confFilePath = "$projectDir\scripts\temp\baselineconf.conf"
+$confFilePath = "$projectDir\scripts\temp\baselineconf.sql.conf"
 
 $baselineContent = Get-Content $baselineFilePath
 $confContent = Get-Content $confFilePath
@@ -220,7 +220,7 @@ $currentDate = Get-Date -Format("yyyyMMddhhmmss")
 
 
 $newBaselinePath = "$projectDir\migrations\B001__$currentDate.sql" 
-$newConfPath = "$projectDir\migrations\B001__$currentDate.conf" 
+$newConfPath = "$projectDir\migrations\B001__$currentDate.sql.conf" 
 
 $newBaselineFile = New-Item -Path $newBaselinePath -ItemType File
 $newConfFile = New-Item -Path $newConfPath -ItemType File
