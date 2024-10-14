@@ -9,7 +9,7 @@
 DECLARE @BackupFilePath NVARCHAR(128) = N'${flyway:workingDirectory}\backups\TEMPORARYBACKUP';
 DECLARE @DatabaseName NVARCHAR(128) = N'${flyway:database}';
 DECLARE @LogicalDataFileName NVARCHAR(128) = 'TEMPORARYDATAFILENAME';
-DECLARE @@LogicalLogFileNam NVARCHAR(128) = 'TEMPORARYLOGFILENAME';
+DECLARE @LogicalLogFileName NVARCHAR(128) = 'TEMPORARYLOGFILENAME';
 
 -- Attempts to Auto Find the Paths to the logical files!
 DECLARE @mdfLocation NVARCHAR(256) = CAST(SERVERPROPERTY('InstanceDefaultDataPath') AS NVARCHAR(200));  -- Get the default data file path
@@ -45,7 +45,7 @@ BEGIN TRY
     FROM DISK = ''' + @BackupFilePath + '''
     WITH REPLACE,
     MOVE ''' + @LogicalDataFileName + ''' TO ''' + @DataFilePath + ''',
-    MOVE ''' + @AdventureWorks2016_Log + ''' TO ''' + @LogFilePath + ''';';
+    MOVE ''' + @LogicalLogFileName + ''' TO ''' + @LogFilePath + ''';';
     EXEC sp_executesql @mySQL;
 
     -- Put the database back in multi_user mode
