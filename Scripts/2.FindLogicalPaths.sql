@@ -1,4 +1,4 @@
-USE AutoPilotDev;  -- Step 1. Change me to the DB name to match the database you backed up!
+USE ChangeMeToBackedUpDatabaseName;  -- Step 1. Change me to the DB name to match the database you backed up!
 GO
 
 DECLARE @LogicalDataFileName NVARCHAR(128); -- Declare a variable to hold the logical data file name
