@@ -1,6 +1,9 @@
-DECLARE @BackupFilePath NVARCHAR(128) = N'C:\WorkingFolders\FWD\AutoRodent\backups\AutoBackup.bak';  -- Step 1. Change me to the backup location!
-DECLARE @LogicalDataFileName NVARCHAR(128) = N'AdventureWorks2016_Data';  -- Step 2. Make these match the original DB! Psst, you can use 2.FindLogicalPaths.sql
-DECLARE @LogicalLogFileName NVARCHAR(128) = N'AdventureWorks2016_Log';  -- Step 2. Make these match the original DB! Psst, you can use 2.FindLogicalPaths.sql
+----------------------------------------------------- Changes Required In This Section --------------------------------------------------------
+DECLARE @BackupFilePath NVARCHAR(128) = N'C:\git\AutoPilot\backups\AutoBackup_Customer.bak';  -- Step 1. Change me to the backup location!
+DECLARE @LogicalDataFileName NVARCHAR(128) = N'AdventureWorks2016_Data';  -- Step 2a. Make these match the original DB! Psst, you can use 2.FindLogicalPaths.sql
+DECLARE @LogicalLogFileName NVARCHAR(128) = N'AdventureWorks2016_Log';  -- Step 2b. Make these match the original DB! Psst, you can use 2.FindLogicalPaths.sql
+----------------------------------------------------- DON'T CHANGE BELOW THIS LINE --------------------------------------------------------
+
 DECLARE @DataFilePath NVARCHAR(260);  -- Declare a variable to hold the data file path
 DECLARE @LogFilePath NVARCHAR(260);  -- Declare a variable to hold the log file path
 DECLARE @DatabaseName NVARCHAR(128);  -- Declare a variable to hold the current database name
