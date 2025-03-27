@@ -1,5 +1,5 @@
 id = "1a79eeeb-c64a-4b85-8d31-f1a4bdfc8441"
-name = "AutoPilot - Backup and Running"
+name = "Autopilot - Backup and Running"
 databaseType = "SqlServer"
 
 [environments.development]
